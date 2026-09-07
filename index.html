@@ -72,6 +72,10 @@
             font-size: 16px;
         }
 
+        button.add-btn:active {
+            background-color: #45a049;
+        }
+
         ul {
             list-style: none;
         }
@@ -112,6 +116,10 @@
             font-weight: 600;
         }
 
+        .delete-btn:active {
+            background: #fed7d7;
+        }
+
         .empty-message {
             text-align: center;
             color: #a0aec0;
@@ -120,8 +128,8 @@
         }
 
         input[type="checkbox"] {
-            width: 20px;
-            height: 20px;
+            width: 22px;
+            height: 22px;
             accent-color: #4CAF50;
         }
     </style>
@@ -131,66 +139,74 @@
 <div class="container">
     <h1>Günlük Planlayıcı</h1>
     
-    <div class="input-group">
-        <input type="text" id="taskInput" placeholder="Yeni bir görev ekleyin...">
-        <button class="add-btn" onclick="addTask()">Ekle</button>
-    </div>
+    <form class="input-group" onsubmit="handleFormSubmit(event)">
+        <input type="text" id="taskInput" placeholder="Yeni bir görev ekleyin..." autocomplete="off">
+        <button type="submit" class="add-btn">Ekle</button>
+    </form>
 
     <ul id="taskList"></ul>
     <p id="emptyMsg" class="empty-message">Henüz bir görev eklenmedi.</p>
 </div>
 
 <script>
-    document.addEventListener("DOMContentLoaded", loadTasks);
+    let tasks = [];
 
-    const taskInput = document.getElementById("taskInput");
-    const taskList = document.getElementById("taskList");
-    const emptyMsg = document.getElementById("emptyMsg");
-
-    taskInput.addEventListener("keypress", function(e) {
-        if (e.key === "Enter") addTask();
+    document.addEventListener("DOMContentLoaded", () => {
+        loadTasks();
     });
 
+    function handleFormSubmit(event) {
+        event.preventDefault();
+        addTask();
+    }
+
     function addTask() {
-        const text = taskInput.value.trim();
+        const input = document.getElementById("taskInput");
+        const text = input.value.trim();
         if (text === "") return;
 
-        const tasks = getStoredTasks();
         tasks.push({ text: text, completed: false });
-        saveTasks(tasks);
-
-        taskInput.value = "";
+        saveTasks();
+        input.value = "";
         renderTasks();
     }
 
     function toggleTask(index) {
-        const tasks = getStoredTasks();
         tasks[index].completed = !tasks[index].completed;
-        saveTasks(tasks);
+        saveTasks();
         renderTasks();
     }
 
     function deleteTask(index) {
-        const tasks = getStoredTasks();
         tasks.splice(index, 1);
-        saveTasks(tasks);
+        saveTasks();
         renderTasks();
     }
 
-    function getStoredTasks() {
-        return JSON.parse(localStorage.getItem("phone_todos")) || [];
-    }
-
-    function saveTasks(tasks) {
-        localStorage.setItem("phone_todos", JSON.stringify(tasks));
+    function saveTasks() {
+        try {
+            localStorage.setItem("phone_todos_v2", JSON.stringify(tasks));
+        } catch (e) {
+            console.warn("Depolama erişimi yok, liste oturum süresince tutulacak.");
+        }
     }
 
     function loadTasks() {
+        try {
+            const stored = localStorage.getItem("phone_todos_v2");
+            if (stored) {
+                tasks = JSON.parse(stored);
+            }
+        } catch (e) {
+            tasks = [];
+        }
         renderTasks();
     }
 
     function renderTasks() {
-        const tasks = getStoredTasks();
+        const taskList = document.getElementById("taskList");
+        const emptyMsg = document.getElementById("emptyMsg");
+        
         taskList.innerHTML = "";
 
         if (tasks.length === 0) {
